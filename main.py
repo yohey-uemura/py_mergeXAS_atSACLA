@@ -45,8 +45,6 @@ class Ui(qt.QMainWindow):
         layout = qt.QVBoxLayout()
         self.u.widget_3.setLayout(layout)
         layout.addWidget(self.hist)
-        self.hist.setGraphTitle("Number of shots")
-        self.hist.setGraphYLabel("# shots")
 
 
         def selectDir():
@@ -85,6 +83,11 @@ class Ui(qt.QMainWindow):
             else:
                 msg("!! You did not select a directory :(").exec_()
 
+        def setItems_combobox2():
+            if self.u.listWidget_2.selectedItems():
+                items = [x.text() for x in self.u.listWidget_2.selectedItems()]
+                self.u.comboBox_2.clear()
+                self.u.comboBox_2.addItems(items)
 
         def load_data():
             self.u.comboBox.clear()
@@ -96,6 +99,9 @@ class Ui(qt.QMainWindow):
                 self.u.listWidget_2.addItems(items)
                 for j in range(self.u.listWidget_2.count()):
                     self.u.listWidget_2.item(j).setSelected(True)
+
+                setItems_combobox2()
+
 
         def unselectFiles():
             if self.u.listWidget.selectedItems():
@@ -112,6 +118,12 @@ class Ui(qt.QMainWindow):
                     return
                 try:
                     df = pd.read_csv(datdir+'/'+file,delim_whitespace=True)
+                    label_on = self.u.rb_I0.isChecked()*'I0' + self.u.rb_If.isChecked()*'If'+ self.u.rb_shots.isChecked()*'num_shots' + '_on'
+                    label_off = self.u.rb_I0.isChecked() * 'I0' + self.u.rb_If.isChecked() * 'If' + self.u.rb_shots.isChecked() * 'num_shots' + '_off'
+                    graph_title = self.u.rb_I0.isChecked()*'I0 intensity' + self.u.rb_If.isChecked()*'If intensity'+ self.u.rb_shots.isChecked()*'Num. of shots'
+                    self.hist.setGraphTitle(graph_title)
+                    ylabel = self.u.rb_I0.isChecked() * 'I0 intensity (a.u.)' + self.u.rb_If.isChecked() * 'If intensity  (a.u.)' + self.u.rb_shots.isChecked() * 'Num. of shots'
+                    self.hist.setGraphYLabel(ylabel)
                     if self.u.radioButton_2.isChecked():
                         self.raw_plot.addCurve(df['#motor'],df['xas_on'],color='red',linewidth=1.5,symbol='.',legend='On')
                         self.raw_plot.addCurve(df['#motor'], df['xas_off'],color='blue',linewidth=1.5,symbol='.',legend='Off')
@@ -125,8 +137,9 @@ class Ui(qt.QMainWindow):
                         #     x = np.append(df['#motor'].values,df['#motor'].values[-1]+median[0])
                         # else:
                         #     x = np.append(df['#motor'].values, df['#motor'].values[-1] + median)
-                        self.hist.addCurve(df['#motor'].values,df['num_shots_on'].values,symbol='o',legend='On')
-                        self.hist.addCurve(df['#motor'].values, df['num_shots_off'].values,symbol='o', legend='Off')
+                        self.hist.addCurve(df['#motor'].values, df[label_off].values, symbol='o', legend='Off')
+                        self.hist.addCurve(df['#motor'].values,df[label_on].values,symbol='o',legend='On')
+                        self.hist.setActiveCurveStyle(symbolsize=2)
                         self.hist.setGraphXLabel("Motor /pls")
                     elif self.u.radioButton.isChecked():
                         self.raw_plot.addCurve(df['Energy'], df['xas_on'], color='red',linewidth=1.5,symbol='.', legend='On')
@@ -142,8 +155,9 @@ class Ui(qt.QMainWindow):
                         #     x = np.append(df['Energy'].values, df['Energy'].values[-1] + median[0])
                         # else:
                         #     x = np.append(df['Energy'].values, df['Energy'].values[-1] + median)
-                        self.hist.addCurve(df['Energy'].values, df['num_shots_on'].values,symbol='o',legend='On')
-                        self.hist.addCurve(df['Energy'].values, df['num_shots_off'].values,symbol='o', legend='Off')
+                        self.hist.addCurve(df['Energy'].values, df[label_off].values, symbol='o', legend='Off')
+                        self.hist.addCurve(df['Energy'].values, df[label_on].values,symbol='o',legend='On')
+                        self.hist.setActiveCurveStyle(symbolsize=2)
                         self.hist.setGraphXLabel("Energy /eV")
 
                 except Exception as e:
@@ -151,7 +165,7 @@ class Ui(qt.QMainWindow):
 
         def merge():
             if self.u.comboBox.currentText():
-                rnum = self.u.comboBox.currentText()
+                rnum = self.u.comboBox_2.currentText()
                 datdir = self.u.textBrowser.toPlainText() + '/' + rnum
                 ext = ('escan'*(self.u.radioButton.isChecked())+'mscan'*(self.u.radioButton_2.isChecked()))+'_mpccd'*(self.u.rB_MPCCD.isChecked())
                 items = [x.text() for x in self.u.listWidget_2.selectedItems()]
@@ -233,6 +247,7 @@ class Ui(qt.QMainWindow):
         self.u.pushButton_4.clicked.connect(reloadDir)
         self.u.pushButton_5.clicked.connect(savedata)
         self.u.pushButton_6.clicked.connect(unselectFiles)
+        self.u.listWidget_2.itemClicked.connect(setItems_combobox2)
         self.show()
 
 if __name__ == '__main__':
